@@ -2,6 +2,7 @@ export interface JobSpend {
   cluster_id: string;
   ec2_cost: number;
   job_id: string;
+  job_name?: string;
   run_id: string;
   usage_date: string; // ISO date string
   databricks_cost: number;
@@ -36,8 +37,41 @@ export interface CostBreakdown {
   }>;
 }
 
+export interface JobRun {
+  run_id: string;
+  cluster_id: string;
+  usage_date: string; // ISO date string
+  ec2_cost: number;
+  databricks_cost: number;
+  total_cost: number;
+  ec2_percentage: number;
+  databricks_percentage: number;
+}
+
+export interface GroupedJob {
+  job_id: string;
+  job_name?: string;
+  run_count: number;
+  total_ec2_cost: number;
+  total_databricks_cost: number;
+  runs: JobRun[];
+  total_cost: number;
+  ec2_percentage: number;
+  databricks_percentage: number;
+}
+
 export interface PaginatedJobSpends {
   data: JobSpend[];
+  total_count: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
+export interface PaginatedGroupedJobs {
+  data: GroupedJob[];
   total_count: number;
   page: number;
   per_page: number;

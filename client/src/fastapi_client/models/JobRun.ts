@@ -3,15 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Data model for Databricks job spending records.
+ * Individual job run details.
  */
-export type JobSpend = {
-    cluster_id: string;
-    ec2_cost: number;
-    job_id: string;
-    job_name?: (string | null);
+export type JobRun = {
     run_id: string;
+    cluster_id: string;
     usage_date: string;
+    ec2_cost: number;
     databricks_cost: number;
     /**
      * Calculate total cost as sum of EC2 and Databricks costs.

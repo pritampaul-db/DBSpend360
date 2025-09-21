@@ -3,9 +3,9 @@ import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SummaryCards } from './SummaryCards';
 import { FilterControls } from './FilterControls';
-import { JobSpendTable } from './JobSpendTable';
+import { GroupedJobTable } from './GroupedJobTable';
 import { JobBreakdownModal } from './JobBreakdownModal';
-import { DateRange, JobSpend } from '@/types/job-spend';
+import { DateRange, JobRun } from '@/types/job-spend';
 
 const Dashboard = () => {
   // Default to last 30 days as specified in requirements
@@ -16,17 +16,20 @@ const Dashboard = () => {
 
   const [dateRange, setDateRange] = useState<DateRange>(defaultDateRange);
   const [jobFilter, setJobFilter] = useState<string>('');
-  const [selectedJob, setSelectedJob] = useState<JobSpend | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedRun, setSelectedRun] = useState<JobRun | null>(null);
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
 
-  const handleJobClick = (job: JobSpend) => {
-    setSelectedJob(job);
+  const handleRunClick = (jobId: string, run: JobRun) => {
+    setSelectedJobId(jobId);
+    setSelectedRun(run);
     setIsBreakdownModalOpen(true);
   };
 
   const handleModalClose = () => {
     setIsBreakdownModalOpen(false);
-    setSelectedJob(null);
+    setSelectedJobId(null);
+    setSelectedRun(null);
   };
 
   return (
@@ -64,21 +67,25 @@ const Dashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Job Spending Details</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Jobs are grouped by Job ID. Click the arrow to expand and see individual runs.
+              Click on a run to see detailed cost breakdown.
+            </p>
           </CardHeader>
           <CardContent>
-            <JobSpendTable
+            <GroupedJobTable
               dateRange={dateRange}
               jobFilter={jobFilter}
-              onJobClick={handleJobClick}
+              onRunClick={handleRunClick}
             />
           </CardContent>
         </Card>
 
         {/* Drill-down Modal */}
-        {selectedJob && (
+        {selectedJobId && selectedRun && (
           <JobBreakdownModal
-            jobId={selectedJob.job_id}
-            runId={selectedJob.run_id}
+            jobId={selectedJobId}
+            runId={selectedRun.run_id}
             isOpen={isBreakdownModalOpen}
             onClose={handleModalClose}
           />

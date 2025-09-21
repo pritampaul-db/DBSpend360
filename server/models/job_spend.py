@@ -9,6 +9,7 @@ class JobSpend(BaseModel):
     cluster_id: str
     ec2_cost: float
     job_id: str
+    job_name: Optional[str] = None
     run_id: str
     usage_date: date
     databricks_cost: float
@@ -80,10 +81,87 @@ class CostBreakdown(BaseModel):
         ]
 
 
+class JobRun(BaseModel):
+    """Individual job run details."""
+
+    run_id: str
+    cluster_id: str
+    usage_date: date
+    ec2_cost: float
+    databricks_cost: float
+
+    @computed_field
+    @property
+    def total_cost(self) -> float:
+        """Calculate total cost as sum of EC2 and Databricks costs."""
+        return self.ec2_cost + self.databricks_cost
+
+    @computed_field
+    @property
+    def ec2_percentage(self) -> float:
+        """Calculate EC2 cost as percentage of total."""
+        if self.total_cost == 0:
+            return 0.0
+        return (self.ec2_cost / self.total_cost) * 100
+
+    @computed_field
+    @property
+    def databricks_percentage(self) -> float:
+        """Calculate Databricks cost as percentage of total."""
+        if self.total_cost == 0:
+            return 0.0
+        return (self.databricks_cost / self.total_cost) * 100
+
+
+class GroupedJob(BaseModel):
+    """Grouped job data with aggregated costs and run details."""
+
+    job_id: str
+    job_name: Optional[str] = None
+    run_count: int
+    total_ec2_cost: float
+    total_databricks_cost: float
+    runs: list[JobRun]
+
+    @computed_field
+    @property
+    def total_cost(self) -> float:
+        """Calculate total cost across all runs."""
+        return self.total_ec2_cost + self.total_databricks_cost
+
+    @computed_field
+    @property
+    def ec2_percentage(self) -> float:
+        """Calculate EC2 cost as percentage of total."""
+        if self.total_cost == 0:
+            return 0.0
+        return (self.total_ec2_cost / self.total_cost) * 100
+
+    @computed_field
+    @property
+    def databricks_percentage(self) -> float:
+        """Calculate Databricks cost as percentage of total."""
+        if self.total_cost == 0:
+            return 0.0
+        return (self.total_databricks_cost / self.total_cost) * 100
+
+
 class PaginatedJobSpends(BaseModel):
     """Paginated response for job spends."""
 
     data: list[JobSpend]
+    total_count: int
+    page: int
+    per_page: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+
+
+class PaginatedGroupedJobs(BaseModel):
+    """Paginated response for grouped jobs."""
+
+    data: list[GroupedJob]
     total_count: int
     page: int
     per_page: int

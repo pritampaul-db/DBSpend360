@@ -200,8 +200,8 @@ export const SummaryCards = ({ dateRange }: SummaryCardsProps) => {
                   <div key={`${job.job_id}-${job.run_id}`} className="flex justify-between items-center">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs bg-slate-100 px-2 py-1 rounded">#{index + 1}</span>
-                      <span className="text-sm font-medium truncate max-w-[120px]" title={job.job_id}>
-                        {job.job_id}
+                      <span className="text-sm font-medium" title={job.job_name}>
+                        {job.job_name}
                       </span>
                     </div>
                     <div className="text-right">

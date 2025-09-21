@@ -7,8 +7,9 @@ import {
   getSortedRowModel,
   SortingState,
   useReactTable,
+  Row,
 } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -20,17 +21,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useJobSpends } from '@/hooks/useJobSpends';
-import { DateRange, JobSpend } from '@/types/job-spend';
+import { useGroupedJobSpends } from '@/hooks/useGroupedJobSpends';
+import { useDatabricksHost } from '@/hooks/useDatabricksHost';
+import { DateRange, GroupedJob, JobRun } from '@/types/job-spend';
 import { cn } from '@/lib/utils';
 
-interface JobSpendTableProps {
+interface GroupedJobTableProps {
   dateRange: DateRange;
   jobFilter: string;
-  onJobClick: (job: JobSpend) => void;
+  onRunClick: (jobId: string, run: JobRun) => void;
 }
 
-export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTableProps) => {
+export const GroupedJobTable = ({ dateRange, jobFilter, onRunClick }: GroupedJobTableProps) => {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'total_cost', desc: true }, // Default sort by total cost descending
   ]);
@@ -38,14 +40,17 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
     pageIndex: 0,
     pageSize: 50,
   });
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
-  const { data, isLoading, error } = useJobSpends({
+  const { data, isLoading, error } = useGroupedJobSpends({
     start_date: dateRange.start_date,
     end_date: dateRange.end_date,
     job_name: jobFilter || undefined,
     page: pagination.pageIndex + 1,
     per_page: pagination.pageSize,
   });
+
+  const { data: databricksHost } = useDatabricksHost();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -68,7 +73,38 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
     }
   };
 
-  const columns: ColumnDef<JobSpend>[] = [
+  const toggleRowExpansion = (jobId: string) => {
+    const newExpandedRows = new Set(expandedRows);
+    if (newExpandedRows.has(jobId)) {
+      newExpandedRows.delete(jobId);
+    } else {
+      newExpandedRows.add(jobId);
+    }
+    setExpandedRows(newExpandedRows);
+  };
+
+  const columns: ColumnDef<GroupedJob>[] = [
+    {
+      id: 'expander',
+      header: '',
+      cell: ({ row }) => {
+        const isExpanded = expandedRows.has(row.original.job_id);
+        return (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => toggleRowExpansion(row.original.job_id)}
+            className="h-8 w-8 p-0"
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRightIcon className="h-4 w-4" />
+            )}
+          </Button>
+        );
+      },
+    },
     {
       accessorKey: 'job_id',
       header: ({ column }) => (
@@ -81,11 +117,28 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => (
-        <div className="font-medium max-w-[200px] truncate" title={row.getValue('job_id')}>
-          {row.getValue('job_id')}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const jobId = row.getValue('job_id') as string;
+        const jobUrl = databricksHost ? `${databricksHost}/jobs/${jobId}` : '#';
+
+        return (
+          <div className="font-medium max-w-[200px] truncate">
+            {databricksHost ? (
+              <a
+                href={jobUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 hover:underline"
+                title={`Open job ${jobId} in Databricks`}
+              >
+                {jobId}
+              </a>
+            ) : (
+              <span title={jobId}>{jobId}</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'job_name',
@@ -109,70 +162,58 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
       },
     },
     {
-      accessorKey: 'cluster_id',
+      accessorKey: 'run_count',
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           className="h-8 px-2"
         >
-          Cluster ID
+          Runs
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="max-w-[150px] truncate text-muted-foreground" title={row.getValue('cluster_id')}>
-          {row.getValue('cluster_id')}
+        <div className="text-center">
+          <Badge variant="secondary" className="text-xs">
+            {row.getValue('run_count')} runs
+          </Badge>
         </div>
       ),
     },
     {
-      accessorKey: 'usage_date',
+      accessorKey: 'total_ec2_cost',
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           className="h-8 px-2"
         >
-          Usage Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => formatDate(row.getValue('usage_date')),
-    },
-    {
-      accessorKey: 'ec2_cost',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="h-8 px-2"
-        >
-          EC2 Cost
+          Total EC2 Cost
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
         <div className="text-right font-medium text-blue-600">
-          {formatCurrency(row.getValue('ec2_cost'))}
+          {formatCurrency(row.getValue('total_ec2_cost'))}
         </div>
       ),
     },
     {
-      accessorKey: 'databricks_cost',
+      accessorKey: 'total_databricks_cost',
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           className="h-8 px-2"
         >
-          Databricks Cost
+          Total Databricks Cost
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
         <div className="text-right font-medium text-red-600">
-          {formatCurrency(row.getValue('databricks_cost'))}
+          {formatCurrency(row.getValue('total_databricks_cost'))}
         </div>
       ),
     },
@@ -193,7 +234,7 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
         return (
           <div className="text-right">
             <div className="font-bold text-lg">{formatCurrency(totalCost)}</div>
-            {totalCost > 100 && (
+            {totalCost > 1000 && (
               <Badge variant="destructive" className="text-xs">
                 High Cost
               </Badge>
@@ -201,21 +242,6 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
           </div>
         );
       },
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onJobClick(row.original)}
-          className="h-8"
-        >
-          <Eye className="h-4 w-4 mr-1" />
-          Details
-        </Button>
-      ),
     },
   ];
 
@@ -245,6 +271,58 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
       </div>
     );
   }
+
+  const renderExpandedRow = (job: GroupedJob) => {
+    if (!expandedRows.has(job.job_id)) return null;
+
+    return (
+      <TableRow key={`${job.job_id}-expanded`} className="bg-muted/30">
+        <TableCell colSpan={columns.length} className="p-0">
+          <div className="p-4 border-l-4 border-l-blue-500 bg-muted/20">
+            <h4 className="font-semibold mb-3 text-sm text-muted-foreground">
+              Individual Runs ({job.runs.length} of {job.run_count} total runs shown)
+            </h4>
+            <div className="space-y-2">
+              {job.runs.map((run) => (
+                <div
+                  key={run.run_id}
+                  className="flex items-center justify-between p-3 bg-background rounded-md border hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => onRunClick(job.job_id, run)}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm font-mono text-muted-foreground">
+                      Run: {run.run_id}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDate(run.usage_date)}
+                    </div>
+                    <div className="text-sm text-muted-foreground max-w-[150px] truncate">
+                      {run.cluster_id}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm text-blue-600">
+                      EC2: {formatCurrency(run.ec2_cost)}
+                    </div>
+                    <div className="text-sm text-red-600">
+                      DB: {formatCurrency(run.databricks_cost)}
+                    </div>
+                    <div className="text-sm font-semibold">
+                      Total: {formatCurrency(run.total_cost)}
+                    </div>
+                    <Button size="sm" variant="outline" className="h-7">
+                      <Eye className="h-3 w-3 mr-1" />
+                      Details
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -277,20 +355,24 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
                 </TableRow>
               ))
             ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className="hover:bg-muted/50 cursor-pointer"
-                  onClick={() => onJobClick(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              <>
+                {table.getRowModel().rows.map((row) => (
+                  <>
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                      className="hover:bg-muted/50"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="px-4">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                    {renderExpandedRow(row.original)}
+                  </>
+                ))}
+              </>
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
@@ -308,7 +390,7 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
       {data && data.total_count > 0 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {data.data.length} of {data.total_count} jobs
+            Showing {data.data.length} jobs of {data.total_count} total
             {jobFilter && ` (filtered by "${jobFilter}")`}
           </div>
 

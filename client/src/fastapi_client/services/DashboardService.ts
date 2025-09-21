@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { CostBreakdown } from '../models/CostBreakdown';
 import type { JobSpend } from '../models/JobSpend';
+import type { PaginatedGroupedJobs } from '../models/PaginatedGroupedJobs';
 import type { PaginatedJobSpends } from '../models/PaginatedJobSpends';
 import type { SummaryMetrics } from '../models/SummaryMetrics';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -34,6 +35,42 @@ export class DashboardService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/job-spends',
+            query: {
+                'start_date': startDate,
+                'end_date': endDate,
+                'job_name': jobName,
+                'page': page,
+                'per_page': perPage,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Get Grouped Job Spends
+     * Get paginated job spending data grouped by job with aggregated costs and run details.
+     *
+     * Returns jobs with aggregated costs across all runs and detailed run information.
+     * Each job shows total costs and individual run breakdowns for drill-down functionality.
+     * @param startDate Start date for filtering (YYYY-MM-DD)
+     * @param endDate End date for filtering (YYYY-MM-DD)
+     * @param jobName Optional job name filter
+     * @param page Page number
+     * @param perPage Items per page
+     * @returns PaginatedGroupedJobs Successful Response
+     * @throws ApiError
+     */
+    public static getGroupedJobSpendsApiGroupedJobSpendsGet(
+        startDate: string,
+        endDate: string,
+        jobName?: (string | null),
+        page: number = 1,
+        perPage: number = 50,
+    ): CancelablePromise<PaginatedGroupedJobs> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/grouped-job-spends',
             query: {
                 'start_date': startDate,
                 'end_date': endDate,

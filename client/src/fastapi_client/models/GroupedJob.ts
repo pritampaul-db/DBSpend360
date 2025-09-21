@@ -2,19 +2,19 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { JobRun } from './JobRun';
 /**
- * Data model for Databricks job spending records.
+ * Grouped job data with aggregated costs and run details.
  */
-export type JobSpend = {
-    cluster_id: string;
-    ec2_cost: number;
+export type GroupedJob = {
     job_id: string;
     job_name?: (string | null);
-    run_id: string;
-    usage_date: string;
-    databricks_cost: number;
+    run_count: number;
+    total_ec2_cost: number;
+    total_databricks_cost: number;
+    runs: Array<JobRun>;
     /**
-     * Calculate total cost as sum of EC2 and Databricks costs.
+     * Calculate total cost across all runs.
      */
     readonly total_cost: number;
     /**

@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends
+from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, PaginatedGroupedJobs
 from server.services.databricks_service import DatabricksService
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
@@ -66,6 +66,50 @@ async def get_job_spends(
         raise HTTPException(
             status_code=500,
             detail=f"Error retrieving job spending data: {str(e)}"
+        )
+
+
+@router.get("/grouped-job-spends", response_model=PaginatedGroupedJobs)
+async def get_grouped_job_spends(
+    start_date: date = Query(..., description="Start date for filtering (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="End date for filtering (YYYY-MM-DD)"),
+    job_name: Optional[str] = Query(None, description="Optional job name filter"),
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(50, ge=1, le=1000, description="Items per page")
+):
+    """
+    Get paginated job spending data grouped by job with aggregated costs and run details.
+
+    Returns jobs with aggregated costs across all runs and detailed run information.
+    Each job shows total costs and individual run breakdowns for drill-down functionality.
+    """
+    try:
+        # Validate date range
+        if start_date > end_date:
+            raise HTTPException(
+                status_code=400,
+                detail="Start date must be before or equal to end date"
+            )
+
+        # Calculate offset for pagination
+        offset = (page - 1) * per_page
+
+        # Get data from Databricks service
+        service = get_databricks_service()
+        result = await service.get_grouped_job_spends(
+            start_date=start_date,
+            end_date=end_date,
+            job_name=job_name,
+            limit=per_page,
+            offset=offset
+        )
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving grouped job spending data: {str(e)}"
         )
 
 
@@ -234,6 +278,16 @@ async def get_date_presets():
 async def dashboard_health():
     """Health check endpoint for the dashboard API."""
     return {"status": "healthy", "service": "dashboard"}
+
+
+@router.get("/databricks-host")
+async def get_databricks_host():
+    """Get the Databricks host URL for frontend use."""
+    import os
+    host = os.getenv("DATABRICKS_HOST")
+    if not host:
+        raise HTTPException(status_code=500, detail="DATABRICKS_HOST not configured")
+    return {"databricks_host": host}
 
 
 @router.get("/debug-table")

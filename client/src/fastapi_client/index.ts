@@ -8,8 +8,11 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { CostBreakdown } from './models/CostBreakdown';
+export type { GroupedJob } from './models/GroupedJob';
 export type { HTTPValidationError } from './models/HTTPValidationError';
+export type { JobRun } from './models/JobRun';
 export type { JobSpend } from './models/JobSpend';
+export type { PaginatedGroupedJobs } from './models/PaginatedGroupedJobs';
 export type { PaginatedJobSpends } from './models/PaginatedJobSpends';
 export type { SummaryMetrics } from './models/SummaryMetrics';
 export type { UserInfo } from './models/UserInfo';
