@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from server.routers import router
+from server.routers.dashboard import router as dashboard_router
 
 
 # Load environment variables from .env.local if it exists
@@ -44,13 +45,14 @@ app = FastAPI(
 
 app.add_middleware(
   CORSMiddleware,
-  allow_origins=['http://localhost:3000', 'http://127.0.0.1:3000'],
-  allow_credentials=True,
-  allow_methods=['*'],
+  allow_origins=['*'],  # Allow all origins for development
+  allow_credentials=False,  # Set to False when using allow_origins=['*']
+  allow_methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allow_headers=['*'],
 )
 
 app.include_router(router, prefix='/api', tags=['api'])
+app.include_router(dashboard_router)
 
 
 @app.get('/health')
