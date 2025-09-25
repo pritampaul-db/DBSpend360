@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Dict
 
 from databricks.sdk import WorkspaceClient
 
-from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, GroupedJob, JobRun, PaginatedGroupedJobs
+from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, GroupedJob, JobRun, PaginatedGroupedJobs, ClusterDetails
 
 
 class DatabricksService:
@@ -405,3 +405,82 @@ class DatabricksService:
                 runs.append(run)
 
         return runs
+
+    async def get_cluster_details(self, cluster_id: str) -> Optional[ClusterDetails]:
+        """Get cluster configuration details from system.compute.clusters."""
+
+        try:
+            # Escape single quotes to prevent SQL injection
+            escaped_cluster_id = cluster_id.replace("'", "''")
+
+            # Query the system.compute.clusters table for cluster details
+            query = f"""
+            SELECT
+                cluster_id,
+                owned_by,
+                create_time,
+                driver_node_type,
+                worker_node_type,
+                worker_count,
+                min_autoscale_workers,
+                max_autoscale_workers,
+                auto_termination_minutes,
+                enable_elastic_disk,
+                tags,
+                aws_attributes,
+                dbr_version,
+                data_security_mode
+            FROM system.compute.clusters
+            WHERE cluster_id = '{escaped_cluster_id}'
+            LIMIT 1
+            """
+
+            response = self.client.statement_execution.execute_statement(
+                warehouse_id=self.warehouse_id,
+                statement=query
+            )
+
+            if response.result and response.result.data_array and len(response.result.data_array) > 0:
+                row = response.result.data_array[0]
+
+                # Parse tags and aws_attributes as JSON if they exist
+                tags = None
+                aws_attributes = None
+
+                try:
+                    if row[10]:  # tags
+                        import json
+                        tags = json.loads(row[10])
+                except:
+                    tags = {"raw": row[10]} if row[10] else None
+
+                try:
+                    if row[11]:  # aws_attributes
+                        import json
+                        aws_attributes = json.loads(row[11])
+                except:
+                    aws_attributes = {"raw": row[11]} if row[11] else None
+
+                return ClusterDetails(
+                    cluster_id=row[0],
+                    owned_by=row[1],
+                    create_time=row[2],
+                    driver_node_type=row[3],
+                    worker_node_type=row[4],
+                    worker_count=int(row[5]) if row[5] is not None else None,
+                    min_autoscale_workers=int(row[6]) if row[6] is not None else None,
+                    max_autoscale_workers=int(row[7]) if row[7] is not None else None,
+                    auto_termination_minutes=int(row[8]) if row[8] is not None else None,
+                    enable_elastic_disk=bool(row[9]) if row[9] is not None else None,
+                    tags=tags,
+                    aws_attributes=aws_attributes,
+                    dbr_version=row[12],
+                    data_security_mode=row[13]
+                )
+
+            return None
+
+        except Exception as e:
+            # Log the error and return None
+            print(f"Error fetching cluster details for {cluster_id}: {str(e)}")
+            return None

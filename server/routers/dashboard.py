@@ -4,19 +4,27 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, PaginatedGroupedJobs
+from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, PaginatedGroupedJobs, CostAnalysis, ClusterDetails, ClusterAnalysis
 from server.services.databricks_service import DatabricksService
+from server.services.llm_service import LLMService
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
-# Lazy initialization of Databricks service
+# Lazy initialization of services
 databricks_service = None
+llm_service = None
 
 def get_databricks_service():
     global databricks_service
     if databricks_service is None:
         databricks_service = DatabricksService()
     return databricks_service
+
+def get_llm_service():
+    global llm_service
+    if llm_service is None:
+        llm_service = LLMService()
+    return llm_service
 
 
 class DateRangeRequest(BaseModel):
@@ -345,6 +353,140 @@ async def debug_table_data():
             "status": "error",
             "error": str(e)
         }
+
+
+@router.get("/job/{job_id}/analyze", response_model=CostAnalysis)
+async def analyze_job_costs(
+    job_id: str,
+    run_id: str = Query(..., description="Run ID for the specific job execution")
+):
+    """
+    Get LLM-powered cost analysis for a specific job run.
+
+    Returns AI-generated insights about EC2 vs Databricks cost breakdown,
+    optimization recommendations, and cost efficiency assessment.
+    """
+    try:
+        # First get the cost breakdown data
+        databricks_service = get_databricks_service()
+        breakdown = await databricks_service.get_job_cost_breakdown(
+            job_id=job_id,
+            run_id=run_id
+        )
+
+        if not breakdown:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No cost breakdown found for job_id: {job_id}, run_id: {run_id}"
+            )
+
+        # Get LLM analysis
+        llm_service = get_llm_service()
+        analysis = await llm_service.analyze_job_costs(
+            job_id=job_id,
+            run_id=run_id,
+            ec2_cost=breakdown.ec2_cost,
+            databricks_cost=breakdown.databricks_cost,
+            total_cost=breakdown.total_cost,
+            cluster_id=breakdown.cluster_id,
+            usage_date=breakdown.usage_date.isoformat()
+        )
+
+        return CostAnalysis(
+            job_id=job_id,
+            run_id=run_id,
+            analysis=analysis
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating cost analysis: {str(e)}"
+        )
+
+
+@router.get("/cluster/{cluster_id}/details", response_model=ClusterDetails)
+async def get_cluster_details(cluster_id: str):
+    """
+    Get detailed cluster configuration from system.compute.clusters.
+
+    Returns cluster configuration including node types, autoscaling settings,
+    runtime version, and other configuration details.
+    """
+    try:
+        # Get cluster details from Databricks service
+        databricks_service = get_databricks_service()
+        cluster_details = await databricks_service.get_cluster_details(cluster_id)
+
+        if not cluster_details:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Cluster details not found for cluster_id: {cluster_id}"
+            )
+
+        return cluster_details
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving cluster details: {str(e)}"
+        )
+
+
+@router.get("/cluster/{cluster_id}/analyze", response_model=ClusterAnalysis)
+async def analyze_cluster_configuration(cluster_id: str):
+    """
+    Get LLM-powered cluster configuration analysis.
+
+    Returns AI-generated insights about cluster optimization, cost reduction opportunities,
+    performance improvements, and best practices recommendations.
+    """
+    try:
+        # First get the cluster details
+        databricks_service = get_databricks_service()
+        cluster_details = await databricks_service.get_cluster_details(cluster_id)
+
+        if not cluster_details:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Cluster details not found for cluster_id: {cluster_id}"
+            )
+
+        # Get LLM analysis
+        llm_service = get_llm_service()
+        analysis = await llm_service.analyze_cluster_configuration(
+            cluster_id=cluster_details.cluster_id,
+            owned_by=cluster_details.owned_by,
+            create_time=cluster_details.create_time,
+            driver_node_type=cluster_details.driver_node_type,
+            worker_node_type=cluster_details.worker_node_type,
+            worker_count=cluster_details.worker_count,
+            min_autoscale_workers=cluster_details.min_autoscale_workers,
+            max_autoscale_workers=cluster_details.max_autoscale_workers,
+            auto_termination_minutes=cluster_details.auto_termination_minutes,
+            enable_elastic_disk=cluster_details.enable_elastic_disk,
+            tags=cluster_details.tags,
+            aws_attributes=cluster_details.aws_attributes,
+            dbr_version=cluster_details.dbr_version,
+            data_security_mode=cluster_details.data_security_mode
+        )
+
+        return ClusterAnalysis(
+            cluster_id=cluster_id,
+            analysis=analysis
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating cluster analysis: {str(e)}"
+        )
 
 
 @router.get("/test-connection")

@@ -7,6 +7,9 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { ClusterAnalysis } from './models/ClusterAnalysis';
+export type { ClusterDetails } from './models/ClusterDetails';
+export type { CostAnalysis } from './models/CostAnalysis';
 export type { CostBreakdown } from './models/CostBreakdown';
 export type { GroupedJob } from './models/GroupedJob';
 export type { HTTPValidationError } from './models/HTTPValidationError';

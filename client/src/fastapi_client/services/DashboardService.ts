@@ -2,6 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ClusterAnalysis } from '../models/ClusterAnalysis';
+import type { ClusterDetails } from '../models/ClusterDetails';
+import type { CostAnalysis } from '../models/CostAnalysis';
 import type { CostBreakdown } from '../models/CostBreakdown';
 import type { JobSpend } from '../models/JobSpend';
 import type { PaginatedGroupedJobs } from '../models/PaginatedGroupedJobs';
@@ -194,6 +197,18 @@ export class DashboardService {
         });
     }
     /**
+     * Get Databricks Host
+     * Get the Databricks host URL for frontend use.
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static getDatabricksHostApiDatabricksHostGet(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/databricks-host',
+        });
+    }
+    /**
      * Debug Table Data
      * Debug endpoint to see sample data from the table.
      * @returns any Successful Response
@@ -203,6 +218,83 @@ export class DashboardService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/debug-table',
+        });
+    }
+    /**
+     * Analyze Job Costs
+     * Get LLM-powered cost analysis for a specific job run.
+     *
+     * Returns AI-generated insights about EC2 vs Databricks cost breakdown,
+     * optimization recommendations, and cost efficiency assessment.
+     * @param jobId
+     * @param runId Run ID for the specific job execution
+     * @returns CostAnalysis Successful Response
+     * @throws ApiError
+     */
+    public static analyzeJobCostsApiJobJobIdAnalyzeGet(
+        jobId: string,
+        runId: string,
+    ): CancelablePromise<CostAnalysis> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/job/{job_id}/analyze',
+            path: {
+                'job_id': jobId,
+            },
+            query: {
+                'run_id': runId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Get Cluster Details
+     * Get detailed cluster configuration from system.compute.clusters.
+     *
+     * Returns cluster configuration including node types, autoscaling settings,
+     * runtime version, and other configuration details.
+     * @param clusterId
+     * @returns ClusterDetails Successful Response
+     * @throws ApiError
+     */
+    public static getClusterDetailsApiClusterClusterIdDetailsGet(
+        clusterId: string,
+    ): CancelablePromise<ClusterDetails> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/cluster/{cluster_id}/details',
+            path: {
+                'cluster_id': clusterId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Analyze Cluster Configuration
+     * Get LLM-powered cluster configuration analysis.
+     *
+     * Returns AI-generated insights about cluster optimization, cost reduction opportunities,
+     * performance improvements, and best practices recommendations.
+     * @param clusterId
+     * @returns ClusterAnalysis Successful Response
+     * @throws ApiError
+     */
+    public static analyzeClusterConfigurationApiClusterClusterIdAnalyzeGet(
+        clusterId: string,
+    ): CancelablePromise<ClusterAnalysis> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/cluster/{cluster_id}/analyze',
+            path: {
+                'cluster_id': clusterId,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
     /**

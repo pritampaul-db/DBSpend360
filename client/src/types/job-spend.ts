@@ -99,6 +99,36 @@ export interface JobSpendFilter {
   per_page: number;
 }
 
+export interface CostAnalysis {
+  job_id: string;
+  run_id: string;
+  analysis: string;
+  timestamp: string;
+}
+
+export interface ClusterDetails {
+  cluster_id: string;
+  owned_by?: string;
+  create_time?: string;
+  driver_node_type?: string;
+  worker_node_type?: string;
+  worker_count?: number;
+  min_autoscale_workers?: number;
+  max_autoscale_workers?: number;
+  auto_termination_minutes?: number;
+  enable_elastic_disk?: boolean;
+  tags?: Record<string, any>;
+  aws_attributes?: Record<string, any>;
+  dbr_version?: string;
+  data_security_mode?: string;
+}
+
+export interface ClusterAnalysis {
+  cluster_id: string;
+  analysis: string;
+  timestamp: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

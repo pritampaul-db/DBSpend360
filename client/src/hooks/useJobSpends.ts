@@ -29,6 +29,33 @@ export const useJobBreakdown = (jobId: string, runId: string) => {
   });
 };
 
+export const useJobCostAnalysis = (jobId: string, runId: string) => {
+  return useQuery({
+    queryKey: ['job-cost-analysis', jobId, runId],
+    queryFn: () => apiClient.getJobCostAnalysis(jobId, runId),
+    staleTime: 60 * 60 * 1000, // 1 hour - LLM analysis doesn't change frequently
+    enabled: !!(jobId && runId),
+  });
+};
+
+export const useClusterDetails = (clusterId: string) => {
+  return useQuery({
+    queryKey: ['cluster-details', clusterId],
+    queryFn: () => apiClient.getClusterDetails(clusterId),
+    staleTime: 30 * 60 * 1000, // 30 minutes - cluster config doesn't change often
+    enabled: !!clusterId,
+  });
+};
+
+export const useClusterAnalysis = (clusterId: string) => {
+  return useQuery({
+    queryKey: ['cluster-analysis', clusterId],
+    queryFn: () => apiClient.getClusterAnalysis(clusterId),
+    staleTime: 60 * 60 * 1000, // 1 hour - LLM analysis doesn't change frequently
+    enabled: !!clusterId,
+  });
+};
+
 export const useTopJobs = (dateRange: DateRange, limit: number = 5) => {
   return useQuery({
     queryKey: ['top-jobs', dateRange, limit],

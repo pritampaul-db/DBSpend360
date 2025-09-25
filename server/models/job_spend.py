@@ -168,3 +168,39 @@ class PaginatedGroupedJobs(BaseModel):
     total_pages: int
     has_next: bool
     has_previous: bool
+
+
+class CostAnalysis(BaseModel):
+    """LLM-generated cost analysis for a job run."""
+
+    job_id: str
+    run_id: str
+    analysis: str
+    timestamp: str = Field(default_factory=lambda: date.today().isoformat())
+
+
+class ClusterDetails(BaseModel):
+    """Cluster configuration details from system.compute.clusters."""
+
+    cluster_id: str
+    owned_by: Optional[str] = None
+    create_time: Optional[str] = None
+    driver_node_type: Optional[str] = None
+    worker_node_type: Optional[str] = None
+    worker_count: Optional[int] = None
+    min_autoscale_workers: Optional[int] = None
+    max_autoscale_workers: Optional[int] = None
+    auto_termination_minutes: Optional[int] = None
+    enable_elastic_disk: Optional[bool] = None
+    tags: Optional[dict] = None
+    aws_attributes: Optional[dict] = None
+    dbr_version: Optional[str] = None
+    data_security_mode: Optional[str] = None
+
+
+class ClusterAnalysis(BaseModel):
+    """LLM-generated cluster configuration analysis."""
+
+    cluster_id: str
+    analysis: str
+    timestamp: str = Field(default_factory=lambda: date.today().isoformat())

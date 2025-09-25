@@ -1,4 +1,4 @@
-import { JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, DateRange, JobSpendFilter, DatePreset } from '@/types/job-spend';
+import { JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, DateRange, JobSpendFilter, DatePreset, CostAnalysis, ClusterDetails, ClusterAnalysis } from '@/types/job-spend';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -47,6 +47,19 @@ class ApiClient {
   async getJobCostBreakdown(jobId: string, runId: string): Promise<CostBreakdown> {
     const params = new URLSearchParams({ run_id: runId });
     return this.fetchApi<CostBreakdown>(`/job/${jobId}/breakdown?${params}`);
+  }
+
+  async getJobCostAnalysis(jobId: string, runId: string): Promise<CostAnalysis> {
+    const params = new URLSearchParams({ run_id: runId });
+    return this.fetchApi<CostAnalysis>(`/job/${jobId}/analyze?${params}`);
+  }
+
+  async getClusterDetails(clusterId: string): Promise<ClusterDetails> {
+    return this.fetchApi<ClusterDetails>(`/cluster/${clusterId}/details`);
+  }
+
+  async getClusterAnalysis(clusterId: string): Promise<ClusterAnalysis> {
+    return this.fetchApi<ClusterAnalysis>(`/cluster/${clusterId}/analyze`);
   }
 
   async getTopJobs(dateRange: DateRange, limit: number = 5): Promise<JobSpend[]> {
