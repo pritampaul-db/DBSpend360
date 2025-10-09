@@ -292,10 +292,72 @@ async def dashboard_health():
 async def get_databricks_host():
     """Get the Databricks host URL for frontend use."""
     import os
-    host = os.getenv("DATABRICKS_HOST")
+    from urllib.parse import urlparse
+
+    # Check if we're running in Databricks Apps environment (OAuth mode)
+    client_id = os.getenv("DATABRICKS_CLIENT_ID")
+
+    if client_id:
+        # We're in Databricks Apps environment - always return the known workspace URL
+        # This prevents any issues with app URLs being returned
+        host = "https://e2-demo-field-eng.cloud.databricks.com"
+    else:
+        # We're in local development - use the environment variable
+        host = os.getenv("DATABRICKS_HOST")
+
+        if not host:
+            # Try to get from Databricks client as fallback
+            try:
+                from server.services.databricks_service import get_databricks_service
+                service = get_databricks_service()
+                if hasattr(service.client, 'host') and service.client.host:
+                    host = service.client.host
+                elif hasattr(service.client, '_host') and service.client._host:
+                    host = service.client._host
+            except Exception:
+                pass
+
     if not host:
-        raise HTTPException(status_code=500, detail="DATABRICKS_HOST not configured")
+        raise HTTPException(status_code=500, detail="Unable to determine Databricks workspace URL")
+
+    # Double-check: ensure the host is never an app URL
+    parsed = urlparse(host)
+    if parsed.hostname and 'databricksapps.com' in parsed.hostname:
+        # Force the correct workspace URL for this deployment
+        host = "https://e2-demo-field-eng.cloud.databricks.com"
+
     return {"databricks_host": host}
+
+
+@router.get("/debug-environment")
+async def debug_environment():
+    """Debug endpoint to see environment variables and client info."""
+    import os
+
+    # Get relevant environment variables (without sensitive data)
+    env_info = {
+        "has_databricks_host": bool(os.getenv("DATABRICKS_HOST")),
+        "databricks_host_value": os.getenv("DATABRICKS_HOST") if os.getenv("DATABRICKS_HOST") else None,
+        "has_client_id": bool(os.getenv("DATABRICKS_CLIENT_ID")),
+        "client_id_prefix": os.getenv("DATABRICKS_CLIENT_ID")[:10] + "..." if os.getenv("DATABRICKS_CLIENT_ID") else None,
+    }
+
+    # Try to get client info
+    client_info = {}
+    try:
+        from server.services.databricks_service import get_databricks_service
+        service = get_databricks_service()
+        if hasattr(service.client, 'host'):
+            client_info["client_host"] = service.client.host
+        if hasattr(service.client, '_host'):
+            client_info["client_private_host"] = service.client._host
+    except Exception as e:
+        client_info["error"] = str(e)
+
+    return {
+        "environment": env_info,
+        "client": client_info
+    }
 
 
 @router.get("/debug-table")

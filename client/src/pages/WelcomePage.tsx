@@ -153,7 +153,7 @@ export function WelcomePage() {
 
               <Button asChild className="w-full">
                 <a
-                  href="http://localhost:8000/docs"
+                  href={import.meta.env.DEV ? "http://localhost:8000/docs" : "/docs"}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -464,7 +464,7 @@ export function WelcomePage() {
           <p className="text-muted-foreground">
             Ready to build something amazing? Check out the{" "}
             <a
-              href="http://localhost:8000/docs"
+              href={import.meta.env.DEV ? "http://localhost:8000/docs" : "/docs"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"

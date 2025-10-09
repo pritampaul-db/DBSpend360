@@ -119,7 +119,10 @@ export const GroupedJobTable = ({ dateRange, jobFilter, onRunClick }: GroupedJob
       ),
       cell: ({ row }) => {
         const jobId = row.getValue('job_id') as string;
-        const jobUrl = databricksHost ? `${databricksHost}/jobs/${jobId}` : '#';
+        // Ensure we use the correct workspace URL for job links
+        // Remove any /apps/appname suffix that might be present in deployed environments
+        const workspaceHost = databricksHost ? databricksHost.replace(/\/apps\/[^\/]+$/, '') : null;
+        const jobUrl = workspaceHost ? `${workspaceHost}/jobs/${jobId}` : '#';
 
         return (
           <div className="font-medium max-w-[200px] truncate">

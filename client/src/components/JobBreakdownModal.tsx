@@ -71,14 +71,9 @@ export const JobBreakdownModal = ({ jobId, runId, isOpen, onClose }: JobBreakdow
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
-              Job Cost Breakdown
-            </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-semibold">
+            Job Cost Breakdown
+          </DialogTitle>
         </DialogHeader>
 
         {error ? (
@@ -363,14 +358,9 @@ const ClusterDetailsModal = ({ clusterId, isOpen, onClose }: ClusterDetailsModal
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
-              Cluster Configuration & Analysis
-            </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-semibold">
+            Cluster Configuration & Analysis
+          </DialogTitle>
         </DialogHeader>
 
         {detailsError ? (

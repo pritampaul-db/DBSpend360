@@ -11,17 +11,22 @@ class DatabricksService:
     """Service for interacting with Databricks SQL Warehouse."""
 
     def __init__(self):
-        # Explicitly configure the WorkspaceClient with environment variables
+        # Check if we're running in Databricks Apps (OAuth available)
+        client_id = os.getenv("DATABRICKS_CLIENT_ID")
         host = os.getenv("DATABRICKS_HOST")
         token = os.getenv("DATABRICKS_TOKEN")
 
-        if not host or not token:
-            raise ValueError("DATABRICKS_HOST and DATABRICKS_TOKEN environment variables must be set")
-
-        self.client = WorkspaceClient(
-            host=host,
-            token=token
-        )
+        if client_id:
+            # Running in Databricks Apps - use OAuth automatically
+            self.client = WorkspaceClient()
+        elif host and token:
+            # Running locally with PAT
+            self.client = WorkspaceClient(
+                host=host,
+                token=token
+            )
+        else:
+            raise ValueError("Either DATABRICKS_CLIENT_ID (for OAuth) or both DATABRICKS_HOST and DATABRICKS_TOKEN (for PAT) must be set")
         self.warehouse_id = "862f1d757f0424f7"  # Correct warehouse ID
         self.table_name = "pritam_demo.dbcost360.databricks_job_spends"
         self.job_name_cache: Dict[str, str] = {}  # Cache for job names

@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { PaginatedGroupedJobs, JobSpendFilter } from '@/types/job-spend';
-
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/lib/api-config';
 
 export const useGroupedJobSpends = (params: JobSpendFilter) => {
   return useQuery({

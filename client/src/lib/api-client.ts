@@ -1,6 +1,5 @@
 import { JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, DateRange, JobSpendFilter, DatePreset, CostAnalysis, ClusterDetails, ClusterAnalysis } from '@/types/job-spend';
-
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '@/lib/api-config';
 
 class ApiClient {
   private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {

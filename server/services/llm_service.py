@@ -10,17 +10,22 @@ class LLMService:
     """Service for LLM inference using Databricks models."""
 
     def __init__(self):
-        # Explicitly configure the WorkspaceClient with environment variables
+        # Check if we're running in Databricks Apps (OAuth available)
+        client_id = os.getenv("DATABRICKS_CLIENT_ID")
         host = os.getenv("DATABRICKS_HOST")
         token = os.getenv("DATABRICKS_TOKEN")
 
-        if not host or not token:
-            raise ValueError("DATABRICKS_HOST and DATABRICKS_TOKEN environment variables must be set")
-
-        self.client = WorkspaceClient(
-            host=host,
-            token=token
-        )
+        if client_id:
+            # Running in Databricks Apps - use OAuth automatically
+            self.client = WorkspaceClient()
+        elif host and token:
+            # Running locally with PAT
+            self.client = WorkspaceClient(
+                host=host,
+                token=token
+            )
+        else:
+            raise ValueError("Either DATABRICKS_CLIENT_ID (for OAuth) or both DATABRICKS_HOST and DATABRICKS_TOKEN (for PAT) must be set")
         self.model_name = "databricks-claude-sonnet-4"
 
     async def analyze_job_costs(

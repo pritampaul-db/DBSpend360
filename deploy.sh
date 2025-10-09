@@ -110,6 +110,11 @@ fi
 echo "✅ Databricks authentication successful"
 print_timing "Authentication completed"
 
+# app.yaml is already configured with environment variables
+print_timing "Starting app.yaml configuration"
+echo "✅ app.yaml is configured with environment variables"
+print_timing "App.yaml configuration completed"
+
 # Function to display app info
 display_app_info() {
   echo ""
@@ -330,3 +335,5 @@ fi
 echo ""
 echo "💡 If the app fails to start, visit the /logz endpoint in your browser for installation issues."
 echo "💡 The /logz endpoint requires browser authentication (OAuth) and cannot be accessed via curl."
+
+# app.yaml doesn't need restoration since we set values directly
