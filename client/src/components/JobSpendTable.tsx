@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { useJobSpends } from '@/hooks/useJobSpends';
 import { DateRange, JobSpend } from '@/types/job-spend';
 import { cn } from '@/lib/utils';
+import { useCloudPlatform } from '@/contexts/CloudPlatformContext';
 
 interface JobSpendTableProps {
   dateRange: DateRange;
@@ -31,6 +32,7 @@ interface JobSpendTableProps {
 }
 
 export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTableProps) => {
+  const { config: cloudConfig } = useCloudPlatform();
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'total_cost', desc: true }, // Default sort by total cost descending
   ]);
@@ -148,7 +150,7 @@ export const JobSpendTable = ({ dateRange, jobFilter, onJobClick }: JobSpendTabl
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           className="h-8 px-2"
         >
-          EC2 Cost
+          {cloudConfig?.compute_display_name || 'EC2 Cost'}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),

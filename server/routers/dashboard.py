@@ -4,9 +4,10 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, PaginatedGroupedJobs, CostAnalysis, ClusterDetails, ClusterAnalysis
+from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, PaginatedGroupedJobs, CostAnalysis, ClusterDetails, ClusterAnalysis, CloudPlatformInfo
 from server.services.databricks_service import DatabricksService
 from server.services.llm_service import LLMService
+from server.config.cloud_platform import cloud_config
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
@@ -548,6 +549,23 @@ async def analyze_cluster_configuration(cluster_id: str):
         raise HTTPException(
             status_code=500,
             detail=f"Error generating cluster analysis: {str(e)}"
+        )
+
+
+@router.get("/cloud-platform", response_model=CloudPlatformInfo)
+async def get_cloud_platform_config():
+    """Get cloud platform configuration for dynamic UI labeling."""
+    try:
+        return CloudPlatformInfo(
+            platform=cloud_config.platform.value,
+            compute_service=cloud_config.compute_service_name,
+            compute_display_name=cloud_config.compute_display_name,
+            platform_display_name=cloud_config.platform_display_name
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving cloud platform configuration: {str(e)}"
         )
 
 

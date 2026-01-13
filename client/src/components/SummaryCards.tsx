@@ -3,12 +3,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, TrendingDown, DollarSign, Activity, BarChart3, AlertTriangle } from 'lucide-react';
 import { useSummaryMetrics, useTopJobs } from '@/hooks/useJobSpends';
 import { DateRange } from '@/types/job-spend';
+import { useCloudPlatform } from '@/contexts/CloudPlatformContext';
 
 interface SummaryCardsProps {
   dateRange: DateRange;
 }
 
 export const SummaryCards = ({ dateRange }: SummaryCardsProps) => {
+  const { config: cloudConfig } = useCloudPlatform();
   const { data: metrics, isLoading: isMetricsLoading } = useSummaryMetrics(dateRange);
   const { data: topJobs, isLoading: isTopJobsLoading } = useTopJobs(dateRange, 5);
 
@@ -144,7 +146,7 @@ export const SummaryCards = ({ dateRange }: SummaryCardsProps) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm font-medium">EC2 Costs</span>
+                  <span className="text-sm font-medium">{cloudConfig?.compute_display_name || 'EC2 Costs'}</span>
                 </div>
                 <div className="text-right">
                   <div className="font-semibold">{formatCurrency(metrics.total_ec2_cost)}</div>

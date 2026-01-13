@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CloudPlatformInfo } from '../models/CloudPlatformInfo';
 import type { ClusterAnalysis } from '../models/ClusterAnalysis';
 import type { ClusterDetails } from '../models/ClusterDetails';
 import type { CostAnalysis } from '../models/CostAnalysis';
@@ -209,6 +210,18 @@ export class DashboardService {
         });
     }
     /**
+     * Debug Environment
+     * Debug endpoint to see environment variables and client info.
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static debugEnvironmentApiDebugEnvironmentGet(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/debug-environment',
+        });
+    }
+    /**
      * Debug Table Data
      * Debug endpoint to see sample data from the table.
      * @returns any Successful Response
@@ -295,6 +308,18 @@ export class DashboardService {
             errors: {
                 422: `Validation Error`,
             },
+        });
+    }
+    /**
+     * Get Cloud Platform Config
+     * Get cloud platform configuration for dynamic UI labeling.
+     * @returns CloudPlatformInfo Successful Response
+     * @throws ApiError
+     */
+    public static getCloudPlatformConfigApiCloudPlatformGet(): CancelablePromise<CloudPlatformInfo> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/cloud-platform',
         });
     }
     /**

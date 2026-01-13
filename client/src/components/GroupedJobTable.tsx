@@ -25,6 +25,7 @@ import { useGroupedJobSpends } from '@/hooks/useGroupedJobSpends';
 import { useDatabricksHost } from '@/hooks/useDatabricksHost';
 import { DateRange, GroupedJob, JobRun } from '@/types/job-spend';
 import { cn } from '@/lib/utils';
+import { useCloudPlatform } from '@/contexts/CloudPlatformContext';
 
 interface GroupedJobTableProps {
   dateRange: DateRange;
@@ -33,6 +34,7 @@ interface GroupedJobTableProps {
 }
 
 export const GroupedJobTable = ({ dateRange, jobFilter, onRunClick }: GroupedJobTableProps) => {
+  const { config: cloudConfig } = useCloudPlatform();
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'total_cost', desc: true }, // Default sort by total cost descending
   ]);
@@ -192,7 +194,7 @@ export const GroupedJobTable = ({ dateRange, jobFilter, onRunClick }: GroupedJob
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           className="h-8 px-2"
         >
-          Total EC2 Cost
+          Total {cloudConfig?.compute_service || 'EC2'} Cost
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -305,7 +307,7 @@ export const GroupedJobTable = ({ dateRange, jobFilter, onRunClick }: GroupedJob
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="text-sm text-blue-600">
-                      EC2: {formatCurrency(run.ec2_cost)}
+{cloudConfig?.compute_service || 'EC2'}: {formatCurrency(run.ec2_cost)}
                     </div>
                     <div className="text-sm text-red-600">
                       DB: {formatCurrency(run.databricks_cost)}

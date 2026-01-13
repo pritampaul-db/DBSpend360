@@ -1,4 +1,4 @@
-import { JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, DateRange, JobSpendFilter, DatePreset, CostAnalysis, ClusterDetails, ClusterAnalysis } from '@/types/job-spend';
+import { JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, DateRange, JobSpendFilter, DatePreset, CostAnalysis, ClusterDetails, ClusterAnalysis, CloudPlatformConfig } from '@/types/job-spend';
 import { API_BASE_URL } from '@/lib/api-config';
 
 class ApiClient {
@@ -73,6 +73,10 @@ class ApiClient {
 
   async getDatePresets(): Promise<Record<string, DatePreset>> {
     return this.fetchApi<Record<string, DatePreset>>('/date-presets');
+  }
+
+  async getCloudPlatformConfig(): Promise<CloudPlatformConfig> {
+    return this.fetchApi<CloudPlatformConfig>('/cloud-platform');
   }
 
   async healthCheck(): Promise<{ status: string; service: string }> {

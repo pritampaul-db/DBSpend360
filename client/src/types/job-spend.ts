@@ -129,6 +129,13 @@ export interface ClusterAnalysis {
   timestamp: string;
 }
 
+export interface CloudPlatformConfig {
+  platform: string;
+  compute_service: string;
+  compute_display_name: string;
+  platform_display_name: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

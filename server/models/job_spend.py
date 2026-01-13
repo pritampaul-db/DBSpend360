@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Optional, Any
 from pydantic import BaseModel, Field, computed_field
+from server.config.cloud_platform import cloud_config
 
 
 class JobSpend(BaseModel):
@@ -74,10 +75,11 @@ class CostBreakdown(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        # Generate cost split data for pie chart
+        # Generate cost split data for pie chart with dynamic cloud platform labels
+        labels = cloud_config.get_cost_breakdown_labels()
         self.cost_split = [
-            {"name": "EC2 Cost", "value": self.ec2_cost, "color": "#3b82f6"},
-            {"name": "Databricks Cost", "value": float(data.get('databricks_cost', 0)), "color": "#ef4444"}
+            {"name": labels["compute_cost"], "value": self.ec2_cost, "color": "#3b82f6"},
+            {"name": labels["databricks_cost"], "value": float(data.get('databricks_cost', 0)), "color": "#ef4444"}
         ]
 
 
@@ -204,3 +206,12 @@ class ClusterAnalysis(BaseModel):
     cluster_id: str
     analysis: str
     timestamp: str = Field(default_factory=lambda: date.today().isoformat())
+
+
+class CloudPlatformInfo(BaseModel):
+    """Cloud platform configuration information."""
+
+    platform: str
+    compute_service: str
+    compute_display_name: str
+    platform_display_name: str

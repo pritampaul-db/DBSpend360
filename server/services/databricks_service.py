@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple, Dict
 from databricks.sdk import WorkspaceClient
 
 from server.models.job_spend import JobSpend, SummaryMetrics, CostBreakdown, PaginatedJobSpends, GroupedJob, JobRun, PaginatedGroupedJobs, ClusterDetails
+from server.config.config_loader import app_config
 
 
 class DatabricksService:
@@ -27,8 +28,11 @@ class DatabricksService:
             )
         else:
             raise ValueError("Either DATABRICKS_CLIENT_ID (for OAuth) or both DATABRICKS_HOST and DATABRICKS_TOKEN (for PAT) must be set")
-        self.warehouse_id = "862f1d757f0424f7"  # Correct warehouse ID
-        self.table_name = "pritam_demo.dbcost360.databricks_job_spends"
+
+        # Load configuration from environment-specific config files
+        self.warehouse_id = app_config.warehouse_id
+        self.table_name = app_config.table_name
+        self.query_timeout = app_config.query_timeout_seconds
         self.job_name_cache: Dict[str, str] = {}  # Cache for job names
 
     async def get_job_name(self, job_id: str) -> str:

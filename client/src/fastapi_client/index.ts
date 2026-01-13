@@ -7,6 +7,7 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { CloudPlatformInfo } from './models/CloudPlatformInfo';
 export type { ClusterAnalysis } from './models/ClusterAnalysis';
 export type { ClusterDetails } from './models/ClusterDetails';
 export type { CostAnalysis } from './models/CostAnalysis';

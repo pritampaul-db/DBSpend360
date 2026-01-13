@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useJobBreakdown, useJobCostAnalysis, useClusterDetails, useClusterAnalysis } from '@/hooks/useJobSpends';
+import { useCloudPlatform } from '@/contexts/CloudPlatformContext';
 
 interface JobBreakdownModalProps {
   jobId: string;
@@ -27,6 +28,7 @@ interface ClusterDetailsModalProps {
 }
 
 export const JobBreakdownModal = ({ jobId, runId, isOpen, onClose }: JobBreakdownModalProps) => {
+  const { config: cloudConfig } = useCloudPlatform();
   const { data: breakdown, isLoading, error } = useJobBreakdown(jobId, runId);
   const { data: analysis, isLoading: analysisLoading, error: analysisError } = useJobCostAnalysis(jobId, runId);
   const [isClusterDetailsOpen, setIsClusterDetailsOpen] = useState(false);
@@ -218,7 +220,7 @@ export const JobBreakdownModal = ({ jobId, runId, isOpen, onClose }: JobBreakdow
                       <div className="text-2xl font-bold text-blue-600">
                         {((breakdown.ec2_cost / breakdown.total_cost) * 100).toFixed(1)}%
                       </div>
-                      <div className="text-sm text-blue-600">EC2 Share</div>
+                      <div className="text-sm text-blue-600">{cloudConfig?.compute_service || 'EC2'} Share</div>
                     </div>
                     <div className="text-center p-3 bg-red-50 rounded">
                       <div className="text-2xl font-bold text-red-600">
@@ -237,7 +239,7 @@ export const JobBreakdownModal = ({ jobId, runId, isOpen, onClose }: JobBreakdow
                     )}
                     {breakdown.ec2_cost > breakdown.databricks_cost ? (
                       <Badge variant="secondary" className="w-full justify-center">
-                        EC2-Heavy Workload
+{cloudConfig?.compute_service || 'EC2'}-Heavy Workload
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="w-full justify-center">

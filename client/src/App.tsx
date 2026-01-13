@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from './components/Dashboard';
+import { CloudPlatformProvider } from './contexts/CloudPlatformContext';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -16,7 +17,9 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Dashboard />
+      <CloudPlatformProvider>
+        <Dashboard />
+      </CloudPlatformProvider>
     </QueryClientProvider>
   );
 }
