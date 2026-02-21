@@ -298,36 +298,42 @@ async def get_databricks_host():
     # Check if we're running in Databricks Apps environment (OAuth mode)
     client_id = os.getenv("DATABRICKS_CLIENT_ID")
 
-    if client_id:
-        # We're in Databricks Apps environment - always return the known workspace URL
-        # This prevents any issues with app URLs being returned
-        host = "https://e2-demo-field-eng.cloud.databricks.com"
-    else:
-        # We're in local development - use the environment variable
-        host = os.getenv("DATABRICKS_HOST")
+    try:
+        if client_id:
+            # Running in Databricks Apps / OAuth
+            service = get_databricks_service()
+            host = service.client.config.host
+
+        else:
+            # Running locally with PAT
+            host = os.getenv("DATABRICKS_HOST")
+
+            if not host:
+                # Fallback to SDK client host if env not set
+                service = get_databricks_service()
+                if hasattr(service.client, "config") and service.client.config.host:
+                    host = service.client.config.host
+                elif hasattr(service.client, "host") and service.client.host:
+                    host = service.client.host
+                elif hasattr(service.client, "_host") and service.client._host:
+                    host = service.client._host
 
         if not host:
-            # Try to get from Databricks client as fallback
-            try:
-                from server.services.databricks_service import get_databricks_service
-                service = get_databricks_service()
-                if hasattr(service.client, 'host') and service.client.host:
-                    host = service.client.host
-                elif hasattr(service.client, '_host') and service.client._host:
-                    host = service.client._host
-            except Exception:
-                pass
+            raise ValueError("Unable to determine Databricks workspace URL")
 
-    if not host:
-        raise HTTPException(status_code=500, detail="Unable to determine Databricks workspace URL")
+        # Ensure we never return a databricksapps.com URL
+        parsed = urlparse(host)
+        if parsed.hostname and "databricksapps.com" in parsed.hostname:
+            service = get_databricks_service()
+            host = service.client.config.host
 
-    # Double-check: ensure the host is never an app URL
-    parsed = urlparse(host)
-    if parsed.hostname and 'databricksapps.com' in parsed.hostname:
-        # Force the correct workspace URL for this deployment
-        host = "https://e2-demo-field-eng.cloud.databricks.com"
+        return {"databricks_host": host}
 
-    return {"databricks_host": host}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unable to determine Databricks workspace URL: {str(e)}"
+        )
 
 
 @router.get("/debug-environment")
