@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS ${catalog}.${schema}.dbspend360_total_job_spends (
   created_at      TIMESTAMP,
   updated_at      TIMESTAMP
 )
-CLUSTER BY AUTO;
+CLUSTER BY AUTO

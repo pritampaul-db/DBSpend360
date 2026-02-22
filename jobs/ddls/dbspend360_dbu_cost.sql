@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS ${catalog}.${schema}.dbspend360_dbu_cost (
   created_at      TIMESTAMP,
   updated_at      TIMESTAMP
 )
-CLUSTERED BY AUTO
+CLUSTER BY AUTO

@@ -15,11 +15,7 @@ class DatabricksService:
         # Check if we're running in Databricks Apps (OAuth available)
         client_id = os.getenv("DATABRICKS_CLIENT_ID")
         host = os.getenv("DATABRICKS_HOST")
-<<<<<<< HEAD
-        token = os.getenv("DATABRICKS_TOKEN"
-=======
         token = os.getenv("DATABRICKS_TOKEN")
->>>>>>> ecd9a2e5965010b3271dfba9bfd511f9b39ed291
 
         if client_id:
             # Running in Databricks Apps - use OAuth automaticall

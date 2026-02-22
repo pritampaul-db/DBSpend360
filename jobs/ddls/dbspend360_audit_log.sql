@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS ${catalog}.${schema}.dbspend360_audit_log (
   message    STRING,    -- optional notes / error summary
   created_at TIMESTAMP  -- log insertion time
 )
-CLUSTERED BY AUTO
+CLUSTER BY AUTO

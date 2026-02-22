@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS ${catalog}.${schema}.dbspend360_error_log (
   raw_record    STRING,   -- JSON serialization of the problematic row
   created_at    TIMESTAMP
 )
-CLUSTERED BY AUTO
+CLUSTER BY AUTO

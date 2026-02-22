@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS ${catalog}.${schema}.dbspend360_cloud_cost_explorer (
   updated_at  TIMESTAMP,
   cost_incurred_date DATE
 )
-CLUSTERED BY AUTO
+CLUSTER BY AUTO
