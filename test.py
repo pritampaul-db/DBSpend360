@@ -15,10 +15,10 @@ class DatabricksService:
         # Check if we're running in Databricks Apps (OAuth available)
         client_id = os.getenv("DATABRICKS_CLIENT_ID")
         host = os.getenv("DATABRICKS_HOST")
-        token = os.getenv("DATABRICKS_TOKEN")
+        token = os.getenv("DATABRICKS_TOKEN"
 
         if client_id:
-            # Running in Databricks Apps - use OAuth automatically
+            # Running in Databricks Apps - use OAuth automaticall
             self.client = WorkspaceClient()
         elif host and token:
             # Running locally with PAT
@@ -81,16 +81,15 @@ class DatabricksService:
         # Data query with pagination
         data_query = f"""
         SELECT
-            a.cluster_id,
-            a.cloud_cost,
-            a.job_id,
-            a.run_id,
-            a.usage_date,
-            a.databricks_cost,
-            jobs.name as job_name
-        FROM {self.table_name} a LEFT OUTER JOIN system.lakeflow.jobs jobs ON a.job_id = jobs.job_id
+            cluster_id,
+            cloud_cost,
+            job_id,
+            run_id,
+            usage_date,
+            databricks_cost
+        FROM {self.table_name}
         {where_clause}
-        ORDER BY (a.cloud_cost + a.databricks_cost) DESC
+        ORDER BY (cloud_cost + databricks_cost) DESC
         LIMIT {limit} OFFSET {offset}
         """
 
@@ -114,13 +113,13 @@ class DatabricksService:
         if data_response.result and data_response.result.data_array:
             for row in data_response.result.data_array:
                 job_id = row[2]
-                ###job_name = await self.get_job_name(job_id)
+                job_name = await self.get_job_name(job_id)
 
                 job_spend = JobSpend(
                     cluster_id=row[0],
                     ec2_cost=float(row[1]),
                     job_id=job_id,
-                    job_name=row[6],
+                    job_name=job_name,
                     run_id=row[3],
                     usage_date=date.fromisoformat(row[4]),
                     databricks_cost=float(row[5])
@@ -151,7 +150,7 @@ class DatabricksService:
             AVG(cloud_cost + databricks_cost) as avg_cost,
             MAX(cloud_cost + databricks_cost) as max_cost,
             MIN(cloud_cost + databricks_cost) as min_cost,
-            SUM(cloud_cost) as total_ec2_cost,
+            SUM(cloud_cost) as total_cloud_cost,
             SUM(databricks_cost) as total_databricks_cost
         FROM {self.table_name}
         WHERE usage_date >= '{start_date.isoformat()}' AND usage_date <= '{end_date.isoformat()}'
@@ -202,7 +201,7 @@ class DatabricksService:
             run_id,
             cluster_id,
             usage_date,
-            SUM(cloud_cost) as total_ec2_cost,
+            SUM(cloud_cost) as total_cloud_cost,
             SUM(databricks_cost) as total_databricks_cost
         FROM {self.table_name}
         WHERE job_id = '{escaped_job_id}' AND run_id = '{escaped_run_id}'
@@ -236,16 +235,15 @@ class DatabricksService:
 
         query = f"""
         SELECT
-            a.cluster_id,
-            a.cloud_cost,
-            a.job_id,
-            a.run_id,
-            a.usage_date,
-            a.databricks_cost, 
-            jobs.name
-        FROM {self.table_name} a LEFT OUTER JOIN system.lakeflow.jobs jobs ON a.job_id = jobs.job_id
-        WHERE a.usage_date >= '{start_date.isoformat()}' AND a.usage_date <= '{end_date.isoformat()}'
-        ORDER BY (a.cloud_cost + a.databricks_cost) DESC
+            cluster_id,
+            cloud_cost,
+            job_id,
+            run_id,
+            usage_date,
+            databricks_cost
+        FROM {self.table_name}
+        WHERE usage_date >= '{start_date.isoformat()}' AND usage_date <= '{end_date.isoformat()}'
+        ORDER BY (cloud_cost + databricks_cost) DESC
         LIMIT {limit}
         """
 
@@ -258,13 +256,13 @@ class DatabricksService:
         if response.result and response.result.data_array:
             for row in response.result.data_array:
                 job_id = row[2]
-                #job_name = await self.get_job_name(job_id)
+                job_name = await self.get_job_name(job_id)
 
                 job_spend = JobSpend(
                     cluster_id=row[0],
                     ec2_cost=float(row[1]),
                     job_id=job_id,
-                    job_name=row[6],
+                    job_name=job_name,
                     run_id=row[3],
                     usage_date=date.fromisoformat(row[4]),
                     databricks_cost=float(row[5])
@@ -284,7 +282,7 @@ class DatabricksService:
         """Get paginated job spending data grouped by job with run details."""
 
         # Build the base query with direct string interpolation
-        where_clause = f"WHERE a.usage_date >= '{start_date.isoformat()}' AND a.usage_date <= '{end_date.isoformat()}'"
+        where_clause = f"WHERE usage_date >= '{start_date.isoformat()}' AND usage_date <= '{end_date.isoformat()}'"
 
         # For job name filtering, we need to get more results and filter after retrieving job names
         # since job names come from the Jobs API, not the database
@@ -294,15 +292,14 @@ class DatabricksService:
         # Data query with aggregation
         data_query = f"""
         SELECT
-            a.job_id,
-            SUM(a.cloud_cost) as total_ec2_cost,
-            SUM(a.databricks_cost) as total_databricks_cost,
-            COUNT(*) as run_count,
-            jobs.name
-        FROM {self.table_name} a LEFT OUTER JOIN system.lakeflow.jobs jobs ON a.job_id = jobs.job_id
+            job_id,
+            SUM(cloud_cost) as total_cloud_cost,
+            SUM(databricks_cost) as total_databricks_cost,
+            COUNT(*) as run_count
+        FROM {self.table_name}
         {where_clause}
-        GROUP BY a.job_id, jobs.name
-        ORDER BY (SUM(a.cloud_cost) + SUM(a.databricks_cost)) DESC
+        GROUP BY job_id
+        ORDER BY (SUM(cloud_cost) + SUM(databricks_cost)) DESC
         LIMIT {fetch_limit} OFFSET {fetch_offset}
         """
 
@@ -321,8 +318,7 @@ class DatabricksService:
                 run_count = int(row[3])
 
                 # Get job name
-                ##retrieved_job_name = await self.get_job_name(job_id)
-                retrieved_job_name = row[4] or ""
+                retrieved_job_name = await self.get_job_name(job_id)
 
                 # Filter by job name if provided (case-insensitive partial match)
                 if job_name and job_name.lower() not in retrieved_job_name.lower():
@@ -333,7 +329,7 @@ class DatabricksService:
 
                 grouped_job = GroupedJob(
                     job_id=job_id,
-                    job_name=row[4],
+                    job_name=retrieved_job_name,
                     run_count=run_count,
                     total_ec2_cost=total_ec2_cost,
                     total_databricks_cost=total_databricks_cost,
@@ -389,7 +385,7 @@ class DatabricksService:
             run_id,
             cluster_id,
             usage_date,
-            SUM(cloud_cost) as total_ec2_cost,
+            SUM(cloud_cost) as total_cloud_cost,
             SUM(databricks_cost) as total_databricks_cost
         FROM {self.table_name}
         WHERE job_id = '{escaped_job_id}'
