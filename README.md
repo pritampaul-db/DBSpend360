@@ -4,7 +4,7 @@ DBSPEND360
 
 1. Overview
 
-* DBSPEND360 is a Databricks-native solution that provides clear job-level visibility into cloud and DBU spends for Databricks workloads on Azure.
+* DBSPEND360 is a Databricks-native solution that provides clear job-level visibility into cloud and DBU spends for Databricks workloads.
 
 * Tracks end-to-end cost at job, run, and cluster level for Databricks jobs.
 * Combines cloud VM cost from the cloud cost explorer with Databricks DBU cost from system billing tables.
