@@ -291,19 +291,45 @@ class DatabricksService:
         fetch_limit = limit * 3 if job_name else limit  # Get more results if filtering by name
         fetch_offset = 0 if job_name else offset  # Start from beginning if filtering
 
-        # Data query with aggregation
         data_query = f"""
+        WITH filtered AS (
+            SELECT *
+            FROM {self.table_name}
+            WHERE usage_date >= '{start_date.isoformat()}'
+            AND usage_date <= '{end_date.isoformat()}'
+        ),
+        run_level AS (
+            SELECT
+                job_id,
+                run_id,
+                SUM(cloud_cost) AS cloud_cost,
+                SUM(databricks_cost) AS databricks_cost
+            FROM filtered
+            GROUP BY job_id, run_id
+        ),
+        job_level AS (
+            SELECT
+                job_id,
+                SUM(cloud_cost) AS total_ec2_cost,
+                SUM(databricks_cost) AS total_databricks_cost,
+                COUNT(*) AS run_count
+            FROM run_level
+            GROUP BY job_id
+        )
         SELECT
-            a.job_id,
-            SUM(a.cloud_cost) as total_ec2_cost,
-            SUM(a.databricks_cost) as total_databricks_cost,
-            COUNT(*) as run_count,
-            jobs.name
-        FROM {self.table_name} a LEFT OUTER JOIN system.lakeflow.jobs jobs ON a.job_id = jobs.job_id
-        {where_clause}
-        GROUP BY a.job_id, jobs.name
-        ORDER BY (SUM(a.cloud_cost) + SUM(a.databricks_cost)) DESC
-        LIMIT {fetch_limit} OFFSET {fetch_offset}
+            j.job_id,
+            j.total_ec2_cost,
+            j.total_databricks_cost,
+            j.run_count,
+            lj.name
+        FROM job_level j
+        LEFT JOIN (
+            SELECT DISTINCT job_id, name
+            FROM system.lakeflow.jobs
+        ) lj
+        ON j.job_id = lj.job_id
+        ORDER BY (j.total_ec2_cost + j.total_databricks_cost) DESC
+        LIMIT {limit} OFFSET {offset}
         """
 
         # Execute data query
